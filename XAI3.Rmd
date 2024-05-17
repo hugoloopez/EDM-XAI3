@@ -50,3 +50,24 @@ for (feature in features) {
   print(plot_pd)
 }
 ```
+
+
+
+```{r}
+sample_index <- sample(seq_len(nrow(X_train)), size = 500)
+X_train_sample <- X_train[sample_index, ]
+
+# Generate the 2D Partial Dependence Plot for humidity and temperature
+pd_2d <- partial(rf_model, pred.var = c("hum", "temp"), train = X_train_sample, grid.resolution = 50)
+
+# Plot the 2D Partial Dependence Plot with geom_tile
+ggplot() +
+  geom_tile(data = pd_2d, aes(x = hum, y = temp, fill = yhat), width = 0.02, height = 0.02) +
+  scale_fill_viridis_c() +
+  labs(title = "2D Partial Dependence Plot: Humidity vs Temperature",
+       x = "Humidity",
+       y = "Temperature",
+       fill = "Predicted Count") +
+  theme_minimal() +
+  geom_density_2d(data = df, aes(x = hum, y = temp), color = "red")
+```
