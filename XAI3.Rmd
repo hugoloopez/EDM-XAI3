@@ -1,0 +1,52 @@
+
+```{r}
+paquetes <- c("randomForest", "pdp", "ggplot2", "readr")
+
+# Verificar si los paquetes están instalados
+paquetes_instalados <- paquetes %in% rownames(installed.packages())
+
+# Instalar paquetes que no estén instalados
+if (any(!paquetes_instalados)) {
+  install.packages(paquetes[!paquetes_instalados])
+} else {
+  print("Todos los paquetes ya están instalados.")
+}
+
+for (paquete in paquetes) {
+  library(paquete, character.only = TRUE)
+}
+```
+
+
+
+## One dimmensional partial dependence plot
+```{r}
+df <- read_csv("day.csv")
+
+df <- na.omit(df)
+
+X <- df[, !(names(df) %in% "cnt")]  # Features
+y <- df$cnt  # Target variable
+
+set.seed(42)
+train_index <- sample(seq_len(nrow(df)), size = 0.8 * nrow(df))
+X_train <- X[train_index, ]
+y_train <- y[train_index]
+X_test <- X[-train_index, ]
+y_test <- y[-train_index]
+
+set.seed(42)
+rf_model <- randomForest(X_train, y_train, ntree = 100)
+
+predictions <- predict(rf_model, X_test)
+test_score <- cor(predictions, y_test)^2
+print(paste("Test R^2 Score:", test_score))
+
+features <- c("temp", "hum", "windspeed")
+
+for (feature in features) {
+  pd <- partial(rf_model, pred.var = feature, train = X_train)
+  plot_pd <- autoplot(pd, contour = TRUE) + ggtitle(paste("Partial Dependence of", feature))
+  print(plot_pd)
+}
+```
