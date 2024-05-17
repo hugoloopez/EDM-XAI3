@@ -52,7 +52,7 @@ for (feature in features) {
 ```
 
 
-
+## Bidimensional partial dependency plot
 ```{r}
 sample_index <- sample(seq_len(nrow(X_train)), size = 500)
 X_train_sample <- X_train[sample_index, ]
@@ -70,4 +70,56 @@ ggplot() +
        fill = "Predicted Count") +
   theme_minimal() +
   geom_density_2d(data = df, aes(x = hum, y = temp), color = "red")
+```
+
+
+
+## PDP to explain the price of a house
+```{r}
+# Load the dataset
+df <- read_csv('kc_house_data.csv')
+
+# Display the first few rows of the dataset
+head(df)
+
+# Handle missing values (if any)
+df <- na.omit(df)
+
+# Define the feature matrix and target vector
+features <- c('bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'yr_built')
+X <- df[, features]
+y <- df$price
+
+# Split the data into training and testing sets
+set.seed(42)
+train_index <- sample(seq_len(nrow(df)), size = 0.8 * nrow(df))
+X_train <- X[train_index, ]
+y_train <- y[train_index]
+X_test <- X[-train_index, ]
+y_test <- y[-train_index]
+
+# Train a Random Forest model
+set.seed(42)
+rf_model <- randomForest(X_train, y_train, ntree = 100)
+
+# Evaluate the model on the test set
+predictions <- predict(rf_model, X_test)
+test_score <- cor(predictions, y_test)^2
+print(paste("Test R^2 Score:", test_score))
+
+# Extract a set of random samples for the partial dependence plot
+set.seed(42)
+sample_index <- sample(seq_len(nrow(X_train)), size = 500)
+X_train_sample <- X_train[sample_index, ]
+
+# Generate Partial Dependence Plots for the selected features
+features_to_plot <- c('bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'yr_built')
+
+# Loop over the features and generate PDPs
+for (feature in features_to_plot) {
+  pd <- partial(rf_model, pred.var = feature, train = X_train_sample)
+  plot_pd <- autoplot(pd) + ggtitle(paste("Partial Dependence of", feature))
+  print(plot_pd)
+}
+
 ```
